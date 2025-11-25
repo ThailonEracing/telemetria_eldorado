@@ -1,0 +1,223 @@
+# 🧪 Comandos de Teste - Monitor CAN Windows/Kvaser
+# Copie e cole estes comandos no Prompt de Comando ou PowerShell
+
+# ==================================================
+# 1. VERIFICAÇÃO INICIAL
+# ==================================================
+
+# Testar instalação completa
+python teste_instalacao.py
+
+# Verificar drivers Kvaser
+python replay_windows_kvaser.py --check-drivers
+
+# Listar interfaces CAN
+python -c "import can; print('Interfaces:', can.interface.Bus.available_interfaces())"
+
+
+# ==================================================
+# 2. TESTES SEM HARDWARE (SIMULAÇÃO)
+# ==================================================
+
+# Monitor em modo simulação (recomendado para testes iniciais)
+python monitor_windows_kvaser.py --simulate
+
+# Monitor com logging CSV (para análise posterior)
+python monitor_windows_kvaser.py --simulate --csv teste_simulacao.csv
+
+# Monitor com buffer maior
+python monitor_windows_kvaser.py --simulate --buffer 1000 --csv teste_buffer_grande.csv
+
+
+# ==================================================
+# 3. TESTES COM HARDWARE KVASER
+# ==================================================
+
+# Monitor no canal 0 (primeira interface Kvaser)
+python monitor_windows_kvaser.py --channel 0
+
+# Monitor no canal 1 (segunda interface Kvaser, se disponível)
+python monitor_windows_kvaser.py --channel 1
+
+# Monitor com logging CSV
+python monitor_windows_kvaser.py --channel 0 --csv dados_reais.csv
+
+# Monitor com buffer personalizado
+python monitor_windows_kvaser.py --channel 0 --buffer 2000 --csv dados_analise.csv
+
+
+# ==================================================
+# 4. TESTES DE REPLAY
+# ==================================================
+
+# Replay do arquivo de exemplo (recomendado para teste)
+python replay_windows_kvaser.py exemplo_log_can.log
+
+# Replay com canal específico
+python replay_windows_kvaser.py exemplo_log_can.log --channel 0
+
+# Replay em velocidade 2x
+python replay_windows_kvaser.py exemplo_log_can.log --speed 2.0
+
+# Replay em velocidade 5x (rápido)
+python replay_windows_kvaser.py exemplo_log_can.log --speed 5.0
+
+# Replay contínuo (loop)
+python replay_windows_kvaser.py exemplo_log_can.log --loop
+
+# Replay com velocidade 3x e loop
+python replay_windows_kvaser.py exemplo_log_can.log --speed 3.0 --loop
+
+
+# ==================================================
+# 5. TESTES COMBINADOS (DUAS JANELAS)
+# ==================================================
+
+# JANELA 1: Monitor
+python monitor_windows_kvaser.py --channel 0 --csv monitor_ao_vivo.csv
+
+# JANELA 2: Replay simultâneo
+python replay_windows_kvaser.py exemplo_log_can.log --channel 0 --loop
+
+# JANELA 1: Monitor em modo simulação
+python monitor_windows_kvaser.py --simulate --csv simula_vs_real.csv
+
+# JANELA 2: Replay normal
+python replay_windows_kvaser.py exemplo_log_can.log --channel 0 --speed 1.0
+
+
+# ==================================================
+# 6. ANÁLISE DE DADOS
+# ==================================================
+
+# Gerar dados para análise
+python monitor_windows_kvaser.py --simulate --csv dados_analise.csv
+
+# Analisar CSV com Python/pandas (executar após gerar dados)
+python -c "
+import pandas as pd
+df = pd.read_csv('dados_analise.csv')
+print('=== ANÁLISE DOS DADOS ===')
+print(f'Total de linhas: {len(df)}')
+print(f'Colunas: {list(df.columns)}')
+print()
+print('=== ESTATÍSTICAS ===')
+print(df.describe())
+print()
+print('=== DADOS RECENTES (últimas 5 linhas) ===')
+print(df.tail())
+"
+
+# Análise específica das colunas de velocidade
+python -c "
+import pandas as pd
+df = pd.read_csv('dados_analise.csv')
+if 'inv_a_act_speed_rpm' in df.columns:
+    print(f'Velocidade A - Min: {df[\"inv_a_act_speed_rpm\"].min():.1f} rpm')
+    print(f'Velocidade A - Max: {df[\"inv_a_act_speed_rpm\"].max():.1f} rpm')
+    print(f'Velocidade A - Média: {df[\"inv_a_act_speed_rpm\"].mean():.1f} rpm')
+"
+
+
+# ==================================================
+# 7. TESTES DE PERFORMANCE
+# ==================================================
+
+# Teste de performance com buffer grande
+python monitor_windows_kvaser.py --channel 0 --buffer 10000 --csv teste_performance.csv
+
+# Teste de replay rápido
+python replay_windows_kvaser.py exemplo_log_can.log --speed 10.0 --loop
+
+
+# ==================================================
+# 8. DIAGNÓSTICO DE PROBLEMAS
+# ==================================================
+
+# Verificar se drivers estão funcionando
+python -c "
+import can
+try:
+    bus = can.interface.Bus(channel='0', interface='kvaser')
+    print('✅ Conexão Kvaser Canal 0 - OK')
+    bus.shutdown()
+except Exception as e:
+    print(f'❌ Canal 0 - Erro: {e}')
+
+try:
+    bus = can.interface.Bus(channel='1', interface='kvaser')
+    print('✅ Conexão Kvaser Canal 1 - OK')
+    bus.shutdown()
+except Exception as e:
+    print(f'❌ Canal 1 - Erro: {e}')
+"
+
+# Teste de interface básica
+python -c "
+import can
+print('Interfaces disponíveis:', can.interface.Bus.available_interfaces())
+
+try:
+    import can.interface.kvaser
+    print('✅ Driver Kvaser - Disponível')
+except:
+    print('❌ Driver Kvaser - NÃO DISPONÍVEL')
+"
+
+# Teste completo de sistema
+python teste_instalacao.py
+
+
+# ==================================================
+# 9. EXEMPLOS AVANÇADOS
+# ==================================================
+
+# Monitor com todos os parâmetros
+python monitor_windows_kvaser.py \
+    --channel 0 \
+    --buffer 5000 \
+    --csv analise_completa.csv
+
+# Replay customizado
+python replay_windows_kvaser.py \
+    exemplo_log_can.log \
+    --channel 0 \
+    --speed 2.0 \
+    --loop
+
+# Criar arquivo de log personalizado (exemplo de formato)
+echo (1609459200.123456) can0 18FFF3FE#0BB80000FF000000 > meu_log.log
+echo (1609459200.234567) can0 18FFE103#0000133F00000000 >> meu_log.log
+echo (1609459200.345678) can0 18FFA120#0BB8000013370000 >> meu_log.log
+
+# Replay do arquivo personalizado
+python replay_windows_kvaser.py meu_log.log --channel 0
+
+
+# ==================================================
+# 10. COMANDOS DE LIMPEZA
+# ==================================================
+
+# Remover arquivos CSV de teste
+del *.csv
+
+# Remover arquivos de plot de teste
+del *.png
+
+# Verificar arquivos CSV gerados
+dir *.csv
+
+# Listar todos os arquivos do projeto
+dir *.py *.log *.md *.bat *.txt
+
+
+# ==================================================
+# 💡 DICAS RÁPIDAS
+# ==================================================
+
+# 1. SEMPRE teste primeiro com --simulate
+# 2. Use --csv para salvar dados para análise
+# 3. Execute teste_instalacao.py para verificar tudo
+# 4. Use Ctrl+C para parar os programas
+# 5. Abra 2 janelas para teste simultâneo
+# 6. Consulte README.md para documentação completa
